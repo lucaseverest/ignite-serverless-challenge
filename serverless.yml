@@ -1,0 +1,59 @@
+service:
+  name: igniteserverlesschallenge
+
+plugins:
+  - serverless-webpack
+  - serverless-dynamodb-local
+  - serverless-offline
+
+custom:
+  serverless-offline:
+    noPrependStageInUrl: true
+  webpack:
+    webpackConfig: ./webpack.config.js
+    includeModules: true
+  dynamodb:
+    stages:
+      - dev
+      - local
+    start:
+      port: 8000
+      inMemory: true
+      migrate: true
+
+provider:
+  name: aws
+  region: sa-east-1
+  runtime: nodejs14.x
+
+functions:
+  createTask:
+    handler: src/functions/createTask.handle
+    events:
+      - http:
+          path: /todos/{userid}
+          method: POST
+          cors: true
+  searchTasks:
+    handler: src/functions/searchTask.handle
+    events:
+      - http:
+          path: /todos/{userid}
+          method: GET
+          cors: true
+
+resources:
+  Resources:
+    dbTasksUsers:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: users_tasks
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
